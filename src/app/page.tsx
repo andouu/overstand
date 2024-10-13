@@ -40,10 +40,24 @@ export default function Home() {
       </div>
       <div className={styles.content}>
         <div className={styles.tag}>
-          {/* <span>
-            Learn <motion.span>{SUBJECTS[subject]}</motion.span> at the speed of
-            AI.
-          </span> */}
+          <div className={styles.text}>
+            <span className={styles.big}>Learn at the Speed of AI.</span>
+            <p className={styles.description}>
+              From a one second screenshot to detailed explanation, Overstand
+              leverages state-of-the-art LLMs to contextualize textbooks and
+              accelerate your learning.
+            </p>
+            {user ? (
+              <Link className={styles.button} href="/dashboard">
+                Dashboard
+              </Link>
+            ) : (
+              <Link className={styles.button} href="/register">
+                Sign Up
+              </Link>
+            )}
+          </div>
+          <div className={styles.visual}></div>
         </div>
       </div>
     </div>

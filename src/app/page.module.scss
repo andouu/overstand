@@ -1,7 +1,6 @@
 .layout {
   width: 100%;
   min-height: 100vh;
-  background-color: #f8f6f3;
 }
 
 .header {
@@ -45,8 +44,52 @@
   height: 100%;
 
   .tag {
-    padding: 7.5rem 5rem;
-    font-size: 5rem;
-    text-align: center;
+    min-height: 50rem;
+    display: flex;
+    align-items: center;
+    padding: 0 5rem;
+
+    .text {
+      flex: 1;
+
+      .big {
+        display: block;
+        margin-bottom: 2.5rem;
+        font-size: 7.5rem;
+        font-weight: 500;
+        letter-spacing: -1px;
+        line-height: 100%;
+      }
+
+      .description {
+        max-width: 60ch;
+        color: gray;
+        font-size: 1.6rem;
+        line-height: 150%;
+      }
+
+      .button {
+        width: max-content;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem 2rem;
+        margin-top: 3.5rem;
+        border-radius: 5px;
+        color: white;
+        background-color: var(--dark);
+        transition: 0.15s;
+
+        &:hover {
+          opacity: 0.85;
+          text-decoration: none;
+        }
+      }
+    }
+
+    .visual {
+      flex: 1;
+      background-color: red;
+    }
   }
 }

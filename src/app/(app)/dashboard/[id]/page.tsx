@@ -59,6 +59,10 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
       ) : (
         <>
           <div className={styles.header}>{meta!.title}</div>
+          <div className={styles.contentLayout}>
+            <div></div>
+            <aside className={styles.sidebar}></aside>
+          </div>
         </>
       )}
     </div>
