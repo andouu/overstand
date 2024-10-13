@@ -11,19 +11,36 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "@/app/util/firebase/firestore/init";
-import { redirect } from "next/navigation";
 import { Loader } from "@/app/Components/Loader";
 import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comments";
 import { Comment } from "@/app/types/Comment";
 import PDFViewer from "@/app/Components/PDFViewer";
 import { motion } from "framer-motion";
-import { BiRightArrowAlt, BiSolidComment, BiX } from "react-icons/bi";
+import {
+  BiPause,
+  BiPlay,
+  BiRightArrowAlt,
+  BiSolidComment,
+  BiStop,
+  BiX,
+} from "react-icons/bi";
+import { FaMicrophone, FaPause, FaPlay, FaStop } from "react-icons/fa";
 import { textHandler } from "@/app/util/aws";
 import { useAuth } from "@/app/context/Auth";
 import {
   MathJaxContext as BetterMathJaxContext,
   MathJax as BetterMathJax,
 } from "better-react-mathjax";
+import useSpeechRecognition from "@/app/util/useSpeechRecognition";
+import { ttsHandler } from "@/app/util/tts";
+import { FiPlay } from "react-icons/fi";
+import { redirect } from "next/navigation";
+
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+  }
+}
 
 const MathJaxConfig = {
   loader: { load: ["input/tex", "output/svg"] },
@@ -55,6 +72,9 @@ interface SidebarProps {
   pageNumber: number;
   isCommenting: boolean;
   aiBreakdown: { preamble: string; content: string };
+  playAudio: () => void;
+  loadingAudio: boolean;
+  pauseAudio: () => void;
 }
 
 const Sidebar = ({
@@ -63,6 +83,9 @@ const Sidebar = ({
   toggleMenuOpen,
   pageNumber,
   aiBreakdown,
+  playAudio,
+  loadingAudio,
+  pauseAudio,
 }: SidebarProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
 
@@ -102,7 +125,18 @@ const Sidebar = ({
         )}
       </button>
       <div className={styles.content}>
-        <span className={styles.heading}>AI Breakdown</span>
+        <div className={styles.subheader}>
+          <span className={styles.heading}>AI Breakdown</span>
+          {aiBreakdown.content && (
+            <button
+              className={styles.play}
+              disabled={loadingAudio}
+              onClick={playAudio}
+            >
+              {loadingAudio ? <Loader color="var(--dark)" /> : <FaPlay />}
+            </button>
+          )}
+        </div>
         <BetterMathJaxContext config={MathJaxConfig}>
           <div className={styles.aiBreakdown}>
             {aiBreakdown.content ? (
@@ -274,6 +308,36 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     }
   };
 
+  const { isRecording, handleToggleRecording } = useSpeechRecognition({
+    setInputText: setPromptText,
+  });
+
+  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [loadingAudio, setLoadingAudio] = useState<boolean>(false);
+  const handleTTS = async () => {
+    if (!audio) {
+      setLoadingAudio(true);
+      const buffer = await ttsHandler(aiResponse.content);
+      setLoadingAudio(false);
+      const blob = new Blob([buffer], { type: "audio/mp3" });
+      const url = URL.createObjectURL(blob);
+      const newAudio = new Audio(url);
+      setAudio(newAudio);
+      newAudio.play();
+    } else {
+      audio.play();
+    }
+  };
+  const pauseTTS = async () => {
+    if (audio) {
+      audio?.pause();
+    }
+  };
+
+  if (!loading && !meta) {
+    redirect("/dashboard");
+  }
+
   const variant = menuOpen ? "open" : "closed";
 
   return (
@@ -352,6 +416,17 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
                     <button
                       className={styles.submit}
                       disabled={locked}
+                      onClick={handleToggleRecording}
+                    >
+                      {isRecording ? (
+                        <FaStop color="white" size={9} />
+                      ) : (
+                        <FaMicrophone color="white" size={12} />
+                      )}
+                    </button>
+                    <button
+                      className={styles.submit}
+                      disabled={locked}
                       onClick={handleSubmitPrompt}
                     >
                       {locked ? (
@@ -371,6 +446,9 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
               isCommenting={!prompting}
               pageNumber={0}
               aiBreakdown={aiResponse}
+              playAudio={handleTTS}
+              loadingAudio={loadingAudio}
+              pauseAudio={pauseTTS}
             />
           </div>
         </>
