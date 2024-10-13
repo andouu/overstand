@@ -100,10 +100,10 @@
 
     .input {
       width: 50rem;
-      height: 8rem;
+      height: 9rem;
       display: flex;
       gap: 0.5rem;
-      padding: 1.5rem;
+      padding: 1rem;
       border-radius: 5px;
       border: 1px solid lightgray;
       box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.1);
@@ -194,6 +194,28 @@
       color: gray;
       font-size: 1.6rem;
     }
+  }
+}
+
+.subheader {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  .heading {
+    margin: 0;
+  }
+
+  .play {
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 99rem;
+    border: 1px solid var(--dark);
+    background: none;
   }
 }
 

@@ -1,5 +1,6 @@
 import {
   BedrockRuntimeClient,
+  ConverseCommand,
   ConverseStreamCommand,
   ConverseStreamCommandInput,
   ConverseStreamCommandOutput,
@@ -60,7 +61,7 @@ export async function textHandler(
     "You are a helpful LLM guiding a student learning from a textbook. Use the context of the image (a screenshot of a section of a textbook) to guide your response. For reasoning problems, think step by step. Write a response displayable using LaTeX. Here is the user's question: " +
     textInput;
   const input: ConverseStreamCommandInput = {
-    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+    modelId: "anthropic.claude-3-opus-20240229-v1:0",
     messages: [
       {
         role: "user",
@@ -141,6 +142,33 @@ function formatLatexContent(content: string) {
     preamble: preambleCommands.join("\n"),
     content: formattedParts.join(""),
   };
+}
+
+export async function deLatexer(textInput: string) {
+  const prompt =
+    "make this not latex and into plain text that is narratable: " + textInput;
+  const input: ConverseStreamCommandInput = {
+    modelId: "anthropic.claude-3-haiku-20240307-v1:0",
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            text: prompt,
+          },
+        ],
+      },
+    ],
+  };
+  try {
+    const command = new ConverseCommand(input);
+    const response = await client.send(command);
+    if (response.output?.message?.content) {
+      return JSON.stringify(response.output.message.content);
+    }
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 //to test
