@@ -3,11 +3,13 @@ import * as pdfjsLib from "pdfjs-dist";
 import "pdfjs-dist/build/pdf.worker.mjs";
 import "pdfjs-dist/web/pdf_viewer.css";
 import styles from "./PDFViewer.module.scss";
+import { getBlob, ref } from "firebase/storage";
+import { storage } from "@/app/util/firebase/storage/init";
 
 interface PDFViewerProps {
+  pdfId: string;
   width: number;
   height: number;
-  pdfArray: Uint8Array;
   minSelectionWidth?: number;
   minSelectionHeight?: number;
   openCommentary: (pageNumber: number, highlightBlob: Blob | null) => void;
@@ -15,9 +17,9 @@ interface PDFViewerProps {
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
+  pdfId,
   width,
   height,
-  pdfArray,
   minSelectionWidth = 10,
   minSelectionHeight = 10,
   openCommentary,
@@ -49,6 +51,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     ).toString();
 
     const loadPDF = async () => {
+      const fileRef = ref(storage, `books/${pdfId}`);
+      const blob = await getBlob(fileRef);
+      const pdfArray = new Uint8Array(await blob.arrayBuffer());
+
       const loadingTask = pdfjsLib.getDocument(pdfArray/* "/folland_section.pdf" */);
       const pdf = await loadingTask.promise;
 
@@ -80,7 +86,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       setPages(tmpPages);
     };
     loadPDF();
-  }, [pdfArray, width, height]);
+  }, [pdfId, width, height]);
 
   useEffect(() => {
     if (!pdfDocument) return;

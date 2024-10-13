@@ -11,8 +11,6 @@ import {
 } from "firebase/firestore";
 import { db } from "@/app/util/firebase/firestore/init";
 import { redirect } from "next/navigation";
-import { getBlob, ref } from "firebase/storage";
-import { storage } from "@/app/util/firebase/storage/init";
 import { Loader } from "@/app/Components/Loader";
 import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comments";
 import { Comment } from "@/app/types/Comment";
@@ -118,7 +116,6 @@ const Sidebar = ({
 export default function Editor({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [meta, setMeta] = useState<Book>();
-  const [pdfArray, setPdfArray] = useState<Uint8Array | null>(null);
   const [[width, height], setDimensions] = useState<[number, number]>([0, 0]);
 
   useEffect(() => {
@@ -139,12 +136,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
         if (metaSnap.empty) return;
 
         const meta = metaSnap.docs[0].data() as Book;
-
-        const fileRef = ref(storage, `books/${id}`);
-        const blob = await getBlob(fileRef);
-        const newPdfArray = new Uint8Array(await blob.arrayBuffer());
-
-        setPdfArray(newPdfArray);
+        
         setMeta(meta);
       } catch (err) {
         console.error(err);
@@ -158,7 +150,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
-  if (!loading && (!meta || !pdfArray)) {
+  if (!loading && !meta) {
     redirect("/dashboard");
   }
 
@@ -179,13 +171,13 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
           <div className={styles.header}>{meta!.title}</div>
           <div className={styles.contentLayout}>
             <div className={styles.pdf}>
-              {pdfArray && <PDFViewer
+              <PDFViewer
+                pdfId={id}
                 width={width || 200}
                 height={height || 200}
-                pdfArray={pdfArray}
                 openCommentary={() => {}}
                 closeCommentary={() => {}}
-              />}
+              />
               <div className={styles.inputWrapper}>
                 <motion.div
                   className={styles.input}
