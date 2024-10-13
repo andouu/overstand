@@ -5,9 +5,9 @@ import { Book } from "@/app/types/Book";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/app/util/firebase/firestore/init";
 import { redirect } from "next/navigation";
-import { getBlob, getDownloadURL, ref } from "firebase/storage";
+import { getBlob, ref } from "firebase/storage";
 import { storage } from "@/app/util/firebase/storage/init";
-import { LoadingPage } from "@/app/Components/LoadingPage";
+import { Loader } from "@/app/Components/Loader";
 
 export default function Editor({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
@@ -46,7 +46,21 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
   return (
     <div className={styles.layout}>
-      <div className={styles.header}></div>
+      {loading ? (
+        <div className={styles.loading}>
+          <span className={styles.big}>Hold on Tight!</span>
+          <div className={styles.tag}>
+            <Loader color="gray" />
+            <span className={styles.small}>
+              We&apos;re grabbing your book...
+            </span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className={styles.header}>{meta!.title}</div>
+        </>
+      )}
     </div>
   );
 }

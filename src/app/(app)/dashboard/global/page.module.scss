@@ -2,6 +2,81 @@
   padding: 2.5rem 5rem;
 
   h1 {
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
     font-weight: 500;
+  }
+}
+
+.note {
+  width: 100%;
+  margin-top: 5rem;
+  color: gray;
+}
+
+.table {
+  width: 100%;
+
+  .tableHeader,
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 11rem;
+    align-items: center;
+  }
+
+  .tableHeader {
+    height: 3rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid lightgray;
+    color: gray;
+    font-size: 1.4rem;
+
+    &:nth-child(1) {
+      padding: 0 0.5rem;
+    }
+  }
+
+  .row {
+    padding: 0.5rem;
+    border-radius: 5px;
+
+    &.disabled {
+      opacity: 0.65;
+      pointer-events: none;
+    }
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .name {
+      font-size: 1.4rem;
+      font-weight: 500;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .date {
+        font-size: 1.4rem;
+      }
+
+      button {
+        width: 3rem;
+        height: 3rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 99rem;
+        border: none;
+        background: none;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+      }
+    }
   }
 }
