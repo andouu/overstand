@@ -1,0 +1,42 @@
+:root {
+  --slot-bg: rgba(0, 0, 0, 0.035);
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 62.5%;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-roobert);
+}
+
+body {
+  font-size: 1.6rem;
+}
+
+input {
+  border: 1px solid lightgray;
+  border-radius: 5px;
+
+  &:focus {
+    outline: none;
+    border: 1px solid dodgerblue;
+  }
+}
+
+a {
+  color: inherit;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+button {
+  &:disabled {
+    opacity: 0.65;
+  }
+  &:hover {
+    cursor: pointer;
+  }
+}
