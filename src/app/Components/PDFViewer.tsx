@@ -7,7 +7,7 @@ import styles from "./PDFViewer.module.scss";
 interface PDFViewerProps {
   width: number;
   height: number;
-  pdfBuffer: ArrayBuffer;
+  pdfArray: Uint8Array;
   minSelectionWidth?: number;
   minSelectionHeight?: number;
   openCommentary: (pageNumber: number, highlightBlob: Blob | null) => void;
@@ -17,7 +17,7 @@ interface PDFViewerProps {
 const PDFViewer: React.FC<PDFViewerProps> = ({
   width,
   height,
-  pdfBuffer,
+  pdfArray,
   minSelectionWidth = 10,
   minSelectionHeight = 10,
   openCommentary,
@@ -49,10 +49,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     ).toString();
 
     const loadPDF = async () => {
-      const loadingTask = pdfjsLib.getDocument("/folland_section.pdf");
+      const loadingTask = pdfjsLib.getDocument(pdfArray/* "/folland_section.pdf" */);
       const pdf = await loadingTask.promise;
 
       const tmpPages = new Array<ImageData>();
+      let newXOffset = 0;
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
 
@@ -62,8 +63,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         const pageContext = pageCanvas.getContext("2d");
 
         const unscaledViewport = page.getViewport({ scale: 1 });
-        const scale = width / unscaledViewport.width;
-        const scaledViewport = page.getViewport({ scale });
+        const scale = height / unscaledViewport.height;
+        const offsetX = (width - (unscaledViewport.width * scale)) / 2;
+        const scaledViewport = page.getViewport({ offsetX, scale });
 
         const renderContext = {
           canvasContext: pageContext!, // force not null
@@ -78,7 +80,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       setPages(tmpPages);
     };
     loadPDF();
-  }, [pdfBuffer, width, height]);
+  }, [pdfArray, width, height]);
 
   useEffect(() => {
     if (!pdfDocument) return;

@@ -118,7 +118,7 @@ const Sidebar = ({
 export default function Editor({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [meta, setMeta] = useState<Book>();
-  const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
+  const [pdfArray, setPdfArray] = useState<Uint8Array | null>(null);
   const [[width, height], setDimensions] = useState<[number, number]>([0, 0]);
 
   useEffect(() => {
@@ -140,17 +140,16 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
         const meta = metaSnap.docs[0].data() as Book;
 
-        // const fileRef = ref(storage, `books/${id}`);
-        // const blob = await getBlob(fileRef);
+        const fileRef = ref(storage, `books/${id}`);
+        const blob = await getBlob(fileRef);
+        const newPdfArray = new Uint8Array(await blob.arrayBuffer());
 
-        setPdfBuffer(new ArrayBuffer(0));
+        setPdfArray(newPdfArray);
         setMeta(meta);
       } catch (err) {
         console.error(err);
       } finally {
-        setTimeout(() => {
-          setLoading(false);
-        }, 1000);
+        setLoading(false);
       }
     };
 
@@ -159,7 +158,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
 
-  if (!loading && (!meta || !pdfBuffer)) {
+  if (!loading && (!meta || !pdfArray)) {
     redirect("/dashboard");
   }
 
@@ -180,13 +179,13 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
           <div className={styles.header}>{meta!.title}</div>
           <div className={styles.contentLayout}>
             <div className={styles.pdf}>
-              <PDFViewer
+              {pdfArray && <PDFViewer
                 width={width || 200}
                 height={height || 200}
-                pdfBuffer={pdfBuffer!}
+                pdfArray={pdfArray}
                 openCommentary={() => {}}
                 closeCommentary={() => {}}
-              />
+              />}
               <div className={styles.inputWrapper}>
                 <motion.div
                   className={styles.input}
