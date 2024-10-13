@@ -104,36 +104,37 @@ const Viewer: React.FC = () => {
           openCommentary={openCommentary}
           closeCommentary={closeCommentary}
         />
-        <motion.div
-          animate={{
-            opacity: commentaryOpen ? 1 : 0,
-            width: commentaryOpen ? 500 : 0,
-            height: commentaryOpen ? 80 : 0,
-            borderRadius: commentaryOpen ? 10 : 100,
-          }}
-          transition={{ duration: 0.3 }}
-          style={{ overflow: "hidden", border: "2px solid red" }}
-        >
-          <textarea
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: 10,
-              padding: 5,
-              border: "none",
-              outline: "none",
-              boxShadow: "none",
-              resize: "none",
+          <motion.div
+            animate={{
+              opacity: commentaryOpen ? 1 : 0,
+              width: commentaryOpen ? 500 : 0,
+              height: commentaryOpen ? 80 : 0,
+              borderRadius: commentaryOpen ? 10 : 100,
             }}
-            placeholder={
-              isWritingNewMessage
-                ? "Contribute your thoughts"
-                : "Ask AI your question!"
-            }
-            onChange={(e) => setInputText(e.target.value)}
-            value={inputText}
-          />
-        </motion.div>
+            transition={{ duration: 0.3 }}
+            style={{ overflow: "hidden", border: "2px solid red" }}
+          >
+            <textarea
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 10,
+                padding: 5,
+                border: "none",
+                outline: "none",
+                boxShadow: "none",
+                resize: "none",
+              }}
+              placeholder={
+                isWritingNewMessage
+                  ? "Contribute your thoughts"
+                  : "Ask AI your question!"
+              }
+              onChange={(e) => setInputText(e.target.value)}
+              value={inputText}
+            />
+          </motion.div>
+        </div>
         <motion.div
           animate={{ opacity: commentaryOpen ? 1 : 0 }}
           transition={{ duration: 0.3 }}

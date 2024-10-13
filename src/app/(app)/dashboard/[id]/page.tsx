@@ -26,6 +26,8 @@ const CommentItem = ({}: Comment) => {
 
 interface SidebarProps {
   id: string;
+  menuOpen: boolean;
+  toggleMenuOpen: () => void;
   pageNumber: number;
   isCommenting: boolean;
   setIsCommenting: () => void;
@@ -33,11 +35,12 @@ interface SidebarProps {
 
 const Sidebar = ({
   id,
+  menuOpen,
+  toggleMenuOpen,
   pageNumber,
   isCommenting,
   setIsCommenting,
 }: SidebarProps) => {
-  const [open, setOpen] = useState<boolean>(false);
   const [comments, setComments] = useState<Comment[]>([]);
 
   useEffect(() => {
@@ -62,21 +65,29 @@ const Sidebar = ({
     <motion.aside
       className={styles.sidebar}
       initial={{ width: 0 }}
-      animate={{ width: open ? "45vw" : 0 }}
+      animate={{ width: menuOpen ? "45vw" : 0 }}
     >
-      <button
-        className={styles.menuButton}
-        onClick={() => setOpen((prev) => !prev)}
-      >
-        {open ? (
+      <button className={styles.menuButton} onClick={toggleMenuOpen}>
+        {menuOpen ? (
           <BiX size={30} color="var(--dark)" />
         ) : (
           <BiSolidComment size={20} color="var(--dark)" />
         )}
       </button>
-      {sortedComments.length === 0
-        ? null
-        : sortedComments.map(
+      <div className={styles.content}>
+        <span className={styles.heading}>AI Breakdown</span>
+        <div className={styles.aiBreakdown}>
+          <div className={styles.placeholder}>
+            There is no text right now...
+          </div>
+        </div>
+        <span className={styles.heading}>Comments</span>
+        {sortedComments.length === 0 ? (
+          <div className={styles.placeholder}>
+            There are no comments right now...
+          </div>
+        ) : (
+          sortedComments.map(
             ({
               id,
               bookUid,
@@ -97,7 +108,9 @@ const Sidebar = ({
                 postedOn={postedOn}
               />
             )
-          )}
+          )
+        )}
+      </div>
     </motion.aside>
   );
 };
@@ -144,6 +157,8 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     fetchInfo();
   }, [id]);
 
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+
   if (!loading && (!meta || !pdfBuffer)) {
     redirect("/dashboard");
   }
@@ -172,9 +187,44 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
                 openCommentary={() => {}}
                 closeCommentary={() => {}}
               />
+              <div className={styles.inputWrapper}>
+                <motion.div
+                  className={styles.input}
+                  animate={{
+                    opacity: menuOpen ? 1 : 0,
+                    width: menuOpen ? 500 : 0,
+                    height: menuOpen ? 80 : 0,
+                    borderRadius: menuOpen ? 10 : 100,
+                  }}
+                  transition={{ duration: 0.3 }}
+                  style={{ overflow: "hidden", border: "2px solid red" }}
+                >
+                  {/* <textarea
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 10,
+                      padding: 5,
+                      border: "none",
+                      outline: "none",
+                      boxShadow: "none",
+                      resize: "none",
+                    }}
+                    placeholder={
+                      isWritingNewMessage
+                        ? "Contribute your thoughts"
+                        : "Ask AI your question!"
+                    }
+                    onChange={(e) => setInputText(e.target.value)}
+                    value={inputText}
+                  /> */}
+                </motion.div>
+              </div>
             </div>
             <Sidebar
               id={id}
+              menuOpen={menuOpen}
+              toggleMenuOpen={() => setMenuOpen((prev) => !prev)}
               isCommenting={false}
               setIsCommenting={() => {}}
               pageNumber={0}
