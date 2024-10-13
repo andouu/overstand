@@ -45,12 +45,13 @@ const Modal = ({ closeModal }: ModalProps) => {
     try {
       setUploading(true);
       const doc: Book = {
+        global: false,
         id: window.crypto.randomUUID(),
         title,
         lastOpened: new Date(),
         ownerUid: user!.uid,
       };
-
+      
       const fileRef = ref(storage, `books/${doc.id}`);
       await uploadBytes(fileRef, file);
 
@@ -124,6 +125,7 @@ const Modal = ({ closeModal }: ModalProps) => {
 type BookRowProps = Book;
 
 const BookRow = ({ id, title, lastOpened }: BookRowProps) => {
+  const { user } = useAuth();
   const [deleting, setDeleting] = useState<boolean>(false);
 
   const handleDeleteBook = async (id: string) => {
@@ -131,14 +133,17 @@ const BookRow = ({ id, title, lastOpened }: BookRowProps) => {
       setDeleting(true);
 
       const bookQuery = await getDocs(
-        query(collection(db, "books"), where("id", "==", id))
+        query(collection(db, "books"),
+        where("global", "==", false),
+        where("id", "==", id),
+        where("ownerUid", "==", user!.uid))
       );
       if (bookQuery.empty) {
         console.error("Book not found");
         return;
       } else {
-        const fileRef = ref(storage, `books/${id}`);
-        await deleteObject(fileRef);
+        /* const fileRef = ref(storage, `books/${id}`);
+        await deleteObject(fileRef); */
 
         const bookDoc = bookQuery.docs[0];
         await deleteDoc(bookDoc.ref);
@@ -184,6 +189,7 @@ export default function Dashboard() {
   useEffect(() => {
     const libraryQuery = query(
       collection(db, "books").withConverter(BookConverter),
+      where("global", "==", false),
       where("ownerUid", "==", user!.uid)
     );
 
@@ -213,8 +219,9 @@ export default function Dashboard() {
             <span>Name</span>
             <span>Last Opened</span>
           </div>
-          {books.map(({ id, title, lastOpened, ownerUid }) => (
+          {books.map(({ global, id, title, lastOpened, ownerUid }) => (
             <BookRow
+              global={global}
               key={id}
               id={id}
               title={title}
