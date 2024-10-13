@@ -10,7 +10,9 @@ interface PDFViewerProps {
   pdfBuffer: ArrayBuffer;
   minSelectionWidth?: number;
   minSelectionHeight?: number;
-  openCommentary: (pageNumber: number, highlightBlob: Blob | null) => void;
+  setPageNumber: (pageNumber: number) => void;
+  setHighlightBlob: (highlightBlob: Blob | null) => void;
+  openCommentary: () => void;
   closeCommentary: () => void;
 }
 
@@ -20,6 +22,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   pdfBuffer,
   minSelectionWidth = 10,
   minSelectionHeight = 10,
+  setPageNumber,
+  setHighlightBlob,
   openCommentary,
   closeCommentary,
 }) => {
@@ -161,7 +165,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         if (blobContext) {
           blobContext.putImageData(imageData, 0, 0);
           blobCanvas.toBlob((highlightBlob) => {
-            openCommentary(pageNumber, highlightBlob);
+            setHighlightBlob(highlightBlob);
+            setPageNumber(pageNumber);
+            openCommentary();
           });
         }
       } else {

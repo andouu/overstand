@@ -9,9 +9,11 @@ const config = {
   region: "us-west-2",
   credentials: {
     accessKeyId: "AKIAQKPIMC2ZRN7364VQ",
-    secretAccessKey: process.env.AWS_KEY!,
+    secretAccessKey: "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",
   },
 };
+
+console.log(process.env.AWS_KEY);
 
 const client = new BedrockRuntimeClient(config);
 

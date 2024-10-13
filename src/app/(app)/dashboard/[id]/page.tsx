@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./page.module.scss";
 import { Book } from "@/app/types/Book";
 import {
+  addDoc,
   collection,
   getDocs,
   onSnapshot,
@@ -18,10 +19,35 @@ import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comme
 import { Comment } from "@/app/types/Comment";
 import PDFViewer from "@/app/Components/PDFViewer";
 import { motion } from "framer-motion";
-import { BiSolidComment, BiX } from "react-icons/bi";
+import { BiRightArrowAlt, BiSolidComment, BiX } from "react-icons/bi";
+import { textHandler } from "@/app/util/aws";
+import { useAuth } from "@/app/context/Auth";
+import {
+  MathJaxContext as BetterMathJaxContext,
+  MathJax as BetterMathJax,
+} from "better-react-mathjax";
 
-const CommentItem = ({}: Comment) => {
-  return <div></div>;
+const MathJaxConfig = {
+  loader: { load: ["input/tex", "output/svg"] },
+  tex: {
+    inlineMath: [
+      ["$", "$"],
+      ["\\(", "\\)"],
+    ],
+    displayMath: [
+      ["$$", "$$"],
+      ["\\[", "\\]"],
+    ],
+    processEscapes: true,
+    processEnvironments: true,
+  },
+  svg: {
+    fontCache: "global",
+  },
+};
+
+const CommentItem = ({ content, likes, userUid, postedOn }: Comment) => {
+  return <div>{content}</div>;
 };
 
 interface SidebarProps {
@@ -30,7 +56,7 @@ interface SidebarProps {
   toggleMenuOpen: () => void;
   pageNumber: number;
   isCommenting: boolean;
-  setIsCommenting: () => void;
+  aiBreakdown: { preamble: string; content: string };
 }
 
 const Sidebar = ({
@@ -38,8 +64,7 @@ const Sidebar = ({
   menuOpen,
   toggleMenuOpen,
   pageNumber,
-  isCommenting,
-  setIsCommenting,
+  aiBreakdown,
 }: SidebarProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
 
@@ -61,6 +86,10 @@ const Sidebar = ({
     [comments]
   );
 
+  useEffect(() => {
+    console.log(comments);
+  }, [comments]);
+
   return (
     <motion.aside
       className={styles.sidebar}
@@ -76,11 +105,19 @@ const Sidebar = ({
       </button>
       <div className={styles.content}>
         <span className={styles.heading}>AI Breakdown</span>
-        <div className={styles.aiBreakdown}>
-          <div className={styles.placeholder}>
-            There is no text right now...
+        <BetterMathJaxContext config={MathJaxConfig}>
+          <div className={styles.aiBreakdown}>
+            {aiBreakdown.content ? (
+              <BetterMathJax className={styles.math} dynamic>
+                {`${aiBreakdown.preamble}\n${aiBreakdown.content}`}
+              </BetterMathJax>
+            ) : (
+              <span className={styles.placeholder}>
+                There is no text right now...
+              </span>
+            )}
           </div>
-        </div>
+        </BetterMathJaxContext>
         <span className={styles.heading}>Comments</span>
         {sortedComments.length === 0 ? (
           <div className={styles.placeholder}>
@@ -115,7 +152,23 @@ const Sidebar = ({
   );
 };
 
+const InputVariants = {
+  closed: { opacity: 0, scale: 0, transition: { delay: 0.35 } },
+  open: { opacity: 1, scale: 1, transition: { delay: 0.1 } },
+};
+
+const InputTypeVariants = {
+  closed: { top: 0, opacity: 0, transition: { delay: 0.1 } },
+  open: {
+    top: "-3.5rem",
+    opacity: 1,
+    transition: { delay: 0.35 },
+  },
+};
+
 export default function Editor({ params: { id } }: { params: { id: string } }) {
+  const { user } = useAuth();
+
   const [loading, setLoading] = useState<boolean>(true);
   const [meta, setMeta] = useState<Book>();
   const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
@@ -126,8 +179,6 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
     setDimensions([600, window.innerHeight - 120]);
   }, []);
-
-  useEffect(() => console.log([width, height]), [width, height]);
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -148,9 +199,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
       } catch (err) {
         console.error(err);
       } finally {
-        setTimeout(() => {
-          setLoading(false);
-        }, 1000);
+        setLoading(false);
       }
     };
 
@@ -158,10 +207,86 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
   }, [id]);
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [promptText, setPromptText] = useState<string>("");
+  const [prompting, setPrompting] = useState<boolean>(true);
+  const [focusedPageNumber, setFocusedPageNumber] = useState<number | null>(
+    null
+  );
+  const [aiResponse, setAiResponse] = useState<{
+    preamble: string;
+    content: string;
+  }>({ preamble: "", content: "" });
+  const [highlightBlob, setHighlightBlob] = useState<Blob | null>(null);
+  const [locked, setLocked] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      setPromptText("");
+    }
+  }, [menuOpen]);
+
+  const handleSubmitPrompt = async () => {
+    if (!promptText || !meta || !pdfBuffer) return;
+
+    if (!prompting) {
+      try {
+        setLocked(true);
+        const commentCol = collection(db, "comments").withConverter(
+          CommentConverter
+        );
+        const newComment: Comment = {
+          id: window.crypto.randomUUID(),
+          content: promptText,
+          bookUid: id,
+          pageNumber: focusedPageNumber || 1,
+          likes: 0,
+          postedOn: new Date(),
+          userUid: user!.uid,
+        };
+        await addDoc(commentCol, newComment);
+      } catch (e) {
+        console.error("Error adding document: ", e);
+        throw e;
+      } finally {
+        setLocked(false);
+      }
+      setPromptText("");
+    } else {
+      if (!highlightBlob) {
+        return;
+      }
+
+      setLocked(true);
+      setAiResponse({ preamble: "", content: "" });
+      setPromptText("");
+      const imgArray = new Uint8Array(await highlightBlob.arrayBuffer());
+      await textHandler(
+        promptText,
+        imgArray,
+        (
+          text: string | { preamble: string; content: string },
+          isFinal: boolean = false
+        ) => {
+          if (isFinal && typeof text === "string") {
+            const { preamble, content } = JSON.parse(text);
+            setAiResponse({ preamble, content });
+          } else {
+            setAiResponse((prev) => ({
+              ...prev,
+              content: prev.content + text,
+            }));
+          }
+        }
+      );
+      setLocked(false);
+    }
+  };
 
   if (!loading && (!meta || !pdfBuffer)) {
     redirect("/dashboard");
   }
+
+  const variant = menuOpen ? "open" : "closed";
 
   return (
     <div className={styles.layout}>
@@ -184,40 +309,70 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
                 width={width || 200}
                 height={height || 200}
                 pdfBuffer={pdfBuffer!}
-                openCommentary={() => {}}
-                closeCommentary={() => {}}
+                setPageNumber={setFocusedPageNumber}
+                setHighlightBlob={setHighlightBlob}
+                openCommentary={() => setMenuOpen(true)}
+                closeCommentary={() => setMenuOpen(false)}
               />
               <div className={styles.inputWrapper}>
                 <motion.div
-                  className={styles.input}
-                  animate={{
-                    opacity: menuOpen ? 1 : 0,
-                    width: menuOpen ? 500 : 0,
-                    height: menuOpen ? 80 : 0,
-                    borderRadius: menuOpen ? 10 : 100,
-                  }}
-                  transition={{ duration: 0.3 }}
-                  style={{ overflow: "hidden", border: "2px solid red" }}
+                  className={styles.inputType}
+                  variants={InputTypeVariants}
+                  initial="closed"
+                  animate={variant}
+                  transition={{ delay: menuOpen ? 0 : 0.25 }}
                 >
-                  {/* <textarea
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      borderRadius: 10,
-                      padding: 5,
-                      border: "none",
-                      outline: "none",
-                      boxShadow: "none",
-                      resize: "none",
-                    }}
+                  <button
+                    className={`${prompting ? styles.selected : undefined}`}
+                    onClick={() => setPrompting(true)}
+                  >
+                    Ask AI
+                  </button>
+                  <button
+                    className={`${prompting ? undefined : styles.selected}`}
+                    onClick={() => setPrompting(false)}
+                  >
+                    Comment
+                  </button>
+                </motion.div>
+                <motion.div
+                  className={styles.input}
+                  variants={InputVariants}
+                  initial="closed"
+                  animate={variant}
+                  transition={{ duration: 0.25, delay: 0.1 }}
+                >
+                  <textarea
+                    className={styles.textArea}
                     placeholder={
-                      isWritingNewMessage
-                        ? "Contribute your thoughts"
-                        : "Ask AI your question!"
+                      prompting
+                        ? "Ask AI your question!"
+                        : "Contribute your thoughts!"
                     }
-                    onChange={(e) => setInputText(e.target.value)}
-                    value={inputText}
-                  /> */}
+                    onChange={(e) =>
+                      e.target.value.at(-1) !== "\n" &&
+                      setPromptText(e.target.value)
+                    }
+                    value={promptText}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSubmitPrompt();
+                      }
+                    }}
+                  />
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.submit}
+                      disabled={locked}
+                      onClick={handleSubmitPrompt}
+                    >
+                      {locked ? (
+                        <Loader width="1.5rem" height="1.5rem" />
+                      ) : (
+                        <BiRightArrowAlt color="white" size={20} />
+                      )}
+                    </button>
+                  </div>
                 </motion.div>
               </div>
             </div>
@@ -225,9 +380,9 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
               id={id}
               menuOpen={menuOpen}
               toggleMenuOpen={() => setMenuOpen((prev) => !prev)}
-              isCommenting={false}
-              setIsCommenting={() => {}}
+              isCommenting={!prompting}
               pageNumber={0}
+              aiBreakdown={aiResponse}
             />
           </div>
         </>
