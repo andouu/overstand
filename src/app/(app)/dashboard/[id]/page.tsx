@@ -22,14 +22,11 @@ import { Comment } from "@/app/types/Comment";
 import PDFViewer from "@/app/Components/PDFViewer";
 import { motion } from "framer-motion";
 import {
-  BiPause,
-  BiPlay,
   BiRightArrowAlt,
   BiSolidComment,
-  BiStop,
   BiX,
 } from "react-icons/bi";
-import { FaMicrophone, FaPause, FaPlay, FaStop } from "react-icons/fa";
+import { FaMicrophone, FaPlay, FaStop } from "react-icons/fa";
 import { textHandler } from "@/app/util/aws";
 import { useAuth } from "@/app/context/Auth";
 import {
@@ -38,7 +35,6 @@ import {
 } from "better-react-mathjax";
 import useSpeechRecognition from "@/app/util/useSpeechRecognition";
 import { ttsHandler } from "@/app/util/tts";
-import { FiPlay } from "react-icons/fi";
 import { redirect } from "next/navigation";
 
 declare global {
@@ -144,18 +140,18 @@ interface SidebarProps {
   aiBreakdown: { preamble: string; content: string };
   comments: Comment[];
   playAudio: () => void;
+  isPlaying: boolean;
   loadingAudio: boolean;
   pauseAudio: () => void;
 }
 
 const Sidebar = ({
-  id,
   menuOpen,
   toggleMenuOpen,
-  pageNumber,
   aiBreakdown,
   comments,
   playAudio,
+  isPlaying,
   loadingAudio,
   pauseAudio,
 }: SidebarProps) => {
@@ -184,7 +180,7 @@ const Sidebar = ({
             <button
               className={styles.play}
               disabled={loadingAudio}
-              onClick={playAudio}
+              onClick={isPlaying ? pauseAudio : playAudio}
             >
               {loadingAudio ? <Loader color="var(--dark)" /> : <FaPlay />}
             </button>
@@ -349,6 +345,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
   });
 
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [loadingAudio, setLoadingAudio] = useState<boolean>(false);
   const handleTTS = async () => {
     if (!audio) {
@@ -363,10 +360,12 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     } else {
       audio.play();
     }
+    setIsPlaying(true);
   };
   const pauseTTS = async () => {
     if (audio) {
       audio?.pause();
+      setIsPlaying(false);
     }
   };
 
@@ -501,6 +500,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
               aiBreakdown={aiResponse}
               playAudio={handleTTS}
               loadingAudio={loadingAudio}
+              isPlaying={isPlaying}
               pauseAudio={pauseTTS}
               comments={comments}
             />
