@@ -1,6 +1,6 @@
 "use client";
 import styles from "./page.module.scss";
-import { BiDotsVertical, BiTrash, BiUpload, BiX } from "react-icons/bi";
+import { BiTrash, BiUpload, BiX } from "react-icons/bi";
 import { UnstyledLink } from "@/app/Components/UnstyledLink";
 import { useAuth } from "@/app/context/Auth";
 import { ChangeEvent, useEffect, useState } from "react";

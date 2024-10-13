@@ -2,20 +2,19 @@
 import Link from "next/link";
 import { useAuth } from "./context/Auth";
 import styles from "./page.module.scss";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+// import { useState } from "react";
 
-const SUBJECTS = [
-  "Math",
-  "Physics",
-  "Biology",
-  "Chemistry",
-  "Computer Science",
-  "History",
-];
+// const SUBJECTS = [
+//   "Math",
+//   "Physics",
+//   "Biology",
+//   "Chemistry",
+//   "Computer Science",
+//   "History",
+// ];
 
 export default function Home() {
-  const [subject, setSubject] = useState<number>(0);
+  // const [subject, setSubject] = useState<number>(0);
   const { user } = useAuth();
 
   return (

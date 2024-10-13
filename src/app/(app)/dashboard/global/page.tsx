@@ -85,7 +85,7 @@ export default function Global() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   return (
     <div className={styles.layout}>

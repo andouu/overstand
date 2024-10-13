@@ -57,9 +57,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       const { user } = await signInWithEmailAndPassword(auth, email, password);
       setUser(user);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      switch (err.code) {
+      switch ((err as { code: string }).code) {
         case "auth/invalid-email": {
           res = { success: false, error: "Invalid email" };
           break;
@@ -92,9 +92,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         password
       );
       setUser(user);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      switch (err.code) {
+      switch ((err as { code: string }).code) {
         case "auth/invalid-email": {
           res = { success: false, error: "Invalid email" };
           break;
