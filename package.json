@@ -17,6 +17,7 @@
     "better-react-mathjax": "^2.0.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "firebase": "^10.14.1",
     "framer-motion": "^11.11.8",
     "jotai": "^2.10.0",

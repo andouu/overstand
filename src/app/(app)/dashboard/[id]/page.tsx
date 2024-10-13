@@ -9,9 +9,13 @@ import {
   onSnapshot,
   query,
   where,
+  doc,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/app/util/firebase/firestore/init";
-import { redirect } from "next/navigation";
 import { Loader } from "@/app/Components/Loader";
 import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comments";
 import { Comment } from "@/app/types/Comment";
@@ -24,6 +28,8 @@ import {
   MathJaxContext as BetterMathJaxContext,
   MathJax as BetterMathJax,
 } from "better-react-mathjax";
+import { formatDistanceToNow } from 'date-fns';
+import { FaThumbsUp } from 'react-icons/fa';
 
 const MathJaxConfig = {
   loader: { load: ["input/tex", "output/svg"] },
@@ -44,8 +50,71 @@ const MathJaxConfig = {
   },
 };
 
-const CommentItem = ({ content, likes, userUid, postedOn }: Comment) => {
-  return <div>{content}</div>;
+const CommentItem = ({ id, content, likes, userUid, postedOn, pageNumber }: Comment) => {
+  const { user } = useAuth();
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(likes.length);
+
+  useEffect(() => {
+    if (user) {
+      setIsLiked(likes.includes(user.uid));
+    }
+  }, [user, likes]);
+
+  const handleLike = async () => {
+    if (!user) return;
+
+    const commentRef = doc(db, "comments", id);
+    try {
+      if (isLiked) {
+        await updateDoc(commentRef, {
+          likes: arrayRemove(user.uid)
+        });
+        setLikeCount(prev => prev - 1);
+      } else {
+        await updateDoc(commentRef, {
+          likes: arrayUnion(user.uid)
+        });
+        setLikeCount(prev => prev + 1);
+      }
+      setIsLiked(!isLiked);
+    } catch (error) {
+      console.error("Error updating like:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!user || user.uid !== userUid) return;
+
+    try {
+      await deleteDoc(doc(db, "comments", id));
+      // The comment will be removed from the list automatically due to the onSnapshot listener
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
+  return (
+    <div className={styles.commentItem}>
+      <div className={styles.commentHeader}>
+        <span className={styles.commentMeta}>
+          {formatDistanceToNow(postedOn)} ago • Page {pageNumber}
+        </span>
+      </div>
+      <div className={styles.commentContent}>{content}</div>
+      <div className={styles.commentFooter}>
+        <button 
+          className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`} 
+          onClick={handleLike}
+        >
+          <FaThumbsUp /> {likeCount}
+        </button>
+        {user && user.uid === userUid && (
+          <button className={styles.deleteButton} onClick={handleDelete}>Delete</button>
+        )}
+      </div>
+    </div>
+  );
 };
 
 interface SidebarProps {
@@ -55,6 +124,7 @@ interface SidebarProps {
   pageNumber: number;
   isCommenting: boolean;
   aiBreakdown: { preamble: string; content: string };
+  comments: Comment[];
 }
 
 const Sidebar = ({
@@ -63,30 +133,12 @@ const Sidebar = ({
   toggleMenuOpen,
   pageNumber,
   aiBreakdown,
+  comments,
 }: SidebarProps) => {
-  const [comments, setComments] = useState<Comment[]>([]);
-
-  useEffect(() => {
-    const commentsQuery = query(
-      collection(db, "comments").withConverter(CommentConverter),
-      where("bookUid", "==", id)
-    );
-
-    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
-      setComments(snapshot.docs.map((doc) => doc.data()));
-    });
-
-    return () => unsubscribe();
-  }, []);
-
   const sortedComments = useMemo(
-    () => comments.toSorted((a, b) => a.likes - b.likes),
+    () => [...comments].sort((a, b) => b.likes.length - a.likes.length),
     [comments]
   );
-
-  useEffect(() => {
-    console.log(comments);
-  }, [comments]);
 
   return (
     <motion.aside
@@ -122,28 +174,12 @@ const Sidebar = ({
             There are no comments right now...
           </div>
         ) : (
-          sortedComments.map(
-            ({
-              id,
-              bookUid,
-              content,
-              pageNumber,
-              likes,
-              userUid,
-              postedOn,
-            }) => (
-              <CommentItem
-                key={id}
-                id={id}
-                bookUid={bookUid}
-                content={content}
-                pageNumber={pageNumber}
-                likes={likes}
-                userUid={userUid}
-                postedOn={postedOn}
-              />
-            )
-          )
+          sortedComments.map((comment) => (
+            <CommentItem
+              key={comment.id}
+              {...comment}
+            />
+          ))
         )}
       </div>
     </motion.aside>
@@ -211,6 +247,8 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
   }>({ preamble: "", content: "" });
   const [highlightBlob, setHighlightBlob] = useState<Blob | null>(null);
   const [locked, setLocked] = useState<boolean>(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+
   useEffect(() => {
     if (!menuOpen) {
       setPromptText("");
@@ -218,31 +256,28 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
   }, [menuOpen]);
 
   const handleSubmitPrompt = async () => {
-    if (!promptText || !meta) return;
+    if (!promptText || !meta || !user) return;
 
     if (!prompting) {
       try {
         setLocked(true);
-        const commentCol = collection(db, "comments").withConverter(
-          CommentConverter
-        );
+        const commentCol = collection(db, "comments").withConverter(CommentConverter);
         const newComment: Comment = {
-          id: window.crypto.randomUUID(),
-          content: promptText,
+          id: '', // This will be set by Firestore
           bookUid: id,
+          content: promptText,
           pageNumber: focusedPageNumber || 1,
-          likes: 0,
+          likes: [],
+          userUid: user.uid,
           postedOn: new Date(),
-          userUid: user!.uid,
         };
         await addDoc(commentCol, newComment);
+        setPromptText("");
       } catch (e) {
         console.error("Error adding document: ", e);
-        throw e;
       } finally {
         setLocked(false);
       }
-      setPromptText("");
     } else {
       if (!highlightBlob) {
         return;
@@ -274,6 +309,23 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     }
   };
 
+  useEffect(() => {
+    if (!id || !focusedPageNumber) return;
+
+    const commentsQuery = query(
+      collection(db, "comments").withConverter(CommentConverter),
+      where("bookUid", "==", id),
+      where("pageNumber", "==", focusedPageNumber)
+    );
+
+    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+      const newComments = snapshot.docs.map(doc => doc.data());
+      setComments(newComments);
+    });
+
+    return () => unsubscribe();
+  }, [id, focusedPageNumber]);
+
   const variant = menuOpen ? "open" : "closed";
 
   return (
@@ -288,9 +340,9 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
             </span>
           </div>
         </div>
-      ) : (
+      ) : meta ? (
         <>
-          <div className={styles.header}>{meta!.title}</div>
+          <div className={styles.header}>{meta.title}</div>
           <div className={styles.contentLayout}>
             <div className={styles.pdf}>
               <PDFViewer
@@ -369,11 +421,14 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
               menuOpen={menuOpen}
               toggleMenuOpen={() => setMenuOpen((prev) => !prev)}
               isCommenting={!prompting}
-              pageNumber={0}
+              pageNumber={focusedPageNumber || 1}
               aiBreakdown={aiResponse}
+              comments={comments}
             />
           </div>
         </>
+      ) : (
+        <div>Error: Book not found</div>
       )}
     </div>
   );

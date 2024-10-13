@@ -3,7 +3,7 @@ export type Comment = {
   bookUid: string;
   content: string;
   pageNumber: number;
-  likes: number;
+  likes: string[]; // Changed from number to string[]
   userUid: string;
   postedOn: Date;
 };

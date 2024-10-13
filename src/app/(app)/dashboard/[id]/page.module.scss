@@ -196,3 +196,59 @@
     }
   }
 }
+
+.commentItem {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.commentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.userName {
+  font-weight: bold;
+}
+
+.commentMeta {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.commentContent {
+  margin-bottom: 8px;
+}
+
+.commentFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.likeButton, .deleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6c757d;
+  font-size: 0.9rem;
+
+  &:hover {
+    color: #007bff;
+  }
+}
+
+.deleteButton {
+  color: #dc3545;
+
+  &:hover {
+    color: #c82333;
+  }
+}

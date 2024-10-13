@@ -63,7 +63,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       const pdf = await loadingTask.promise;
 
       const tmpPages = new Array<ImageData>();
-      let newXOffset = 0;
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
 

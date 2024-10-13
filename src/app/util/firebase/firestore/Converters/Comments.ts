@@ -12,7 +12,7 @@ export const CommentConverter = {
       content: comment.content,
       pageNumber: comment.pageNumber,
       likes: comment.likes,
-      uid: comment.userUid,
+      userUid: comment.userUid,
       postedOn: comment.postedOn,
     };
   },
@@ -26,7 +26,7 @@ export const CommentConverter = {
       bookUid: data.bookUid,
       content: data.content,
       pageNumber: data.pageNumber,
-      likes: data.likes,
+      likes: data.likes || [],
       userUid: data.userUid,
       postedOn: (data.postedOn as Timestamp).toDate(),
     };
