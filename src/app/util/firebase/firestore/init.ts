@@ -1,4 +1,4 @@
 import { getFirestore } from "firebase/firestore";
-import { app } from "../firebase/init";
+import { app } from "../init";
 
 export const db = getFirestore(app);

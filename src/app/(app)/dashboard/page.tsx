@@ -13,11 +13,13 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { db } from "@/app/util/firestore/init";
+import { db } from "@/app/util/firebase/firestore/init";
 import { Book } from "@/app/types/Book";
-import { BookConverter } from "@/app/util/firestore/Converters/Book";
+import { BookConverter } from "@/app/util/firebase/firestore/Converters/Book";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader } from "@/app/Components/Loader";
+import { deleteObject, ref, uploadBytes } from "firebase/storage";
+import { storage } from "@/app/util/firebase/storage/init";
 
 interface ModalProps {
   closeModal: () => void;
@@ -38,6 +40,8 @@ const Modal = ({ closeModal }: ModalProps) => {
   useEffect(() => setError(""), [title, file]);
 
   const handleUpload = async () => {
+    if (!file || !title) return;
+
     try {
       setUploading(true);
       const doc: Book = {
@@ -46,6 +50,9 @@ const Modal = ({ closeModal }: ModalProps) => {
         lastOpened: new Date(),
         ownerUid: user!.uid,
       };
+
+      const fileRef = ref(storage, `books/${doc.id}`);
+      await uploadBytes(fileRef, file);
 
       await addDoc(collection(db, "books").withConverter(BookConverter), doc);
       closeModal();
@@ -122,6 +129,7 @@ const BookRow = ({ id, title, lastOpened }: BookRowProps) => {
   const handleDeleteBook = async (id: string) => {
     try {
       setDeleting(true);
+
       const bookQuery = await getDocs(
         query(collection(db, "books"), where("id", "==", id))
       );
@@ -129,6 +137,9 @@ const BookRow = ({ id, title, lastOpened }: BookRowProps) => {
         console.error("Book not found");
         return;
       } else {
+        const fileRef = ref(storage, `books/${id}`);
+        await deleteObject(fileRef);
+
         const bookDoc = bookQuery.docs[0];
         await deleteDoc(bookDoc.ref);
       }
