@@ -65,7 +65,7 @@
 
     .inputType {
       position: absolute;
-      left: 0;
+      left: 1rem;
       top: -3rem;
       width: 20rem;
       height: 4rem;
@@ -76,7 +76,7 @@
       border: 1px solid lightgray;
       border-top-left-radius: 5px;
       border-top-right-radius: 5px;
-      background-color: rgba(0, 0, 0, 0.035);
+      background-color: #f3f3f3;
 
       button {
         flex: 1;
@@ -252,7 +252,8 @@
   align-items: center;
 }
 
-.likeButton, .deleteButton {
+.likeButton,
+.deleteButton {
   background: none;
   border: none;
   cursor: pointer;

@@ -21,12 +21,8 @@ import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comme
 import { Comment } from "@/app/types/Comment";
 import PDFViewer from "@/app/Components/PDFViewer";
 import { motion } from "framer-motion";
-import {
-  BiRightArrowAlt,
-  BiSolidComment,
-  BiX,
-} from "react-icons/bi";
-import { FaMicrophone, FaPlay, FaStop } from "react-icons/fa";
+import { BiRightArrowAlt, BiSolidComment, BiX } from "react-icons/bi";
+import { FaMicrophone, FaPause, FaPlay, FaStop } from "react-icons/fa";
 import { textHandler } from "@/app/util/aws";
 import { useAuth } from "@/app/context/Auth";
 import {
@@ -42,8 +38,8 @@ declare global {
     webkitSpeechRecognition: any;
   }
 }
-import { formatDistanceToNow } from 'date-fns';
-import { FaThumbsUp } from 'react-icons/fa';
+import { formatDistanceToNow } from "date-fns";
+import { FaThumbsUp } from "react-icons/fa";
 
 const MathJaxConfig = {
   loader: { load: ["input/tex", "output/svg"] },
@@ -64,7 +60,14 @@ const MathJaxConfig = {
   },
 };
 
-const CommentItem = ({ id, content, likes, userUid, postedOn, pageNumber }: Comment) => {
+const CommentItem = ({
+  id,
+  content,
+  likes,
+  userUid,
+  postedOn,
+  pageNumber,
+}: Comment) => {
   const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes.length);
@@ -82,14 +85,14 @@ const CommentItem = ({ id, content, likes, userUid, postedOn, pageNumber }: Comm
     try {
       if (isLiked) {
         await updateDoc(commentRef, {
-          likes: arrayRemove(user.uid)
+          likes: arrayRemove(user.uid),
         });
-        setLikeCount(prev => prev - 1);
+        setLikeCount((prev) => prev - 1);
       } else {
         await updateDoc(commentRef, {
-          likes: arrayUnion(user.uid)
+          likes: arrayUnion(user.uid),
         });
-        setLikeCount(prev => prev + 1);
+        setLikeCount((prev) => prev + 1);
       }
       setIsLiked(!isLiked);
     } catch (error) {
@@ -117,14 +120,16 @@ const CommentItem = ({ id, content, likes, userUid, postedOn, pageNumber }: Comm
       </div>
       <div className={styles.commentContent}>{content}</div>
       <div className={styles.commentFooter}>
-        <button 
-          className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`} 
+        <button
+          className={`${styles.likeButton} ${isLiked ? styles.liked : ""}`}
           onClick={handleLike}
         >
           <FaThumbsUp /> {likeCount}
         </button>
         {user && user.uid === userUid && (
-          <button className={styles.deleteButton} onClick={handleDelete}>Delete</button>
+          <button className={styles.deleteButton} onClick={handleDelete}>
+            Delete
+          </button>
         )}
       </div>
     </div>
@@ -182,7 +187,13 @@ const Sidebar = ({
               disabled={loadingAudio}
               onClick={isPlaying ? pauseAudio : playAudio}
             >
-              {loadingAudio ? <Loader color="var(--dark)" /> : <FaPlay />}
+              {loadingAudio ? (
+                <Loader color="var(--dark)" />
+              ) : isPlaying ? (
+                <FaPause />
+              ) : (
+                <FaPlay />
+              )}
             </button>
           )}
         </div>
@@ -206,10 +217,7 @@ const Sidebar = ({
           </div>
         ) : (
           sortedComments.map((comment) => (
-            <CommentItem
-              key={comment.id}
-              {...comment}
-            />
+            <CommentItem key={comment.id} {...comment} />
           ))
         )}
       </div>
@@ -292,9 +300,11 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     if (!prompting) {
       try {
         setLocked(true);
-        const commentCol = collection(db, "comments").withConverter(CommentConverter);
+        const commentCol = collection(db, "comments").withConverter(
+          CommentConverter
+        );
         const newComment: Comment = {
-          id: '', // This will be set by Firestore
+          id: "", // This will be set by Firestore
           bookUid: id,
           content: promptText,
           pageNumber: focusedPageNumber || 1,
@@ -379,7 +389,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
     );
 
     const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
-      const newComments = snapshot.docs.map(doc => doc.data());
+      const newComments = snapshot.docs.map((doc) => doc.data());
       setComments(newComments);
     });
 
