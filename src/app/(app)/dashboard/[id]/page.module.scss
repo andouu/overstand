@@ -43,4 +43,37 @@
   height: 100%;
   display: grid;
   grid-template-columns: 1fr auto;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-color: #fff;
+  background-position: center center;
+  background-size: 15px 15px;
+}
+
+.pdf {
+  height: calc(100vh - 8rem);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar {
+  position: relative;
+  height: 100%;
+  border-left: 1px solid lightgray;
+  background-color: white;
+
+  .menuButton {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 5rem;
+    height: 5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 99rem;
+    border: 1px solid lightgray;
+    background-color: white;
+  }
 }

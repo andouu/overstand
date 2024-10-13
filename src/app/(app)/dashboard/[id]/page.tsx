@@ -1,18 +1,120 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./page.module.scss";
 import { Book } from "@/app/types/Book";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "@/app/util/firebase/firestore/init";
 import { redirect } from "next/navigation";
 import { getBlob, ref } from "firebase/storage";
 import { storage } from "@/app/util/firebase/storage/init";
 import { Loader } from "@/app/Components/Loader";
+import { CommentConverter } from "@/app/util/firebase/firestore/Converters/Comments";
+import { Comment } from "@/app/types/Comment";
+import PDFViewer from "@/app/Components/PDFViewer";
+import { motion } from "framer-motion";
+import { BiSolidComment, BiX } from "react-icons/bi";
+
+const CommentItem = ({}: Comment) => {
+  return <div></div>;
+};
+
+interface SidebarProps {
+  id: string;
+  pageNumber: number;
+  isCommenting: boolean;
+  setIsCommenting: () => void;
+}
+
+const Sidebar = ({
+  id,
+  pageNumber,
+  isCommenting,
+  setIsCommenting,
+}: SidebarProps) => {
+  const [open, setOpen] = useState<boolean>(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+
+  useEffect(() => {
+    const commentsQuery = query(
+      collection(db, "comments").withConverter(CommentConverter),
+      where("bookUid", "==", id)
+    );
+
+    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
+      setComments(snapshot.docs.map((doc) => doc.data()));
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const sortedComments = useMemo(
+    () => comments.toSorted((a, b) => a.likes - b.likes),
+    [comments]
+  );
+
+  return (
+    <motion.aside
+      className={styles.sidebar}
+      initial={{ width: 0 }}
+      animate={{ width: open ? "45vw" : 0 }}
+    >
+      <button
+        className={styles.menuButton}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        {open ? (
+          <BiX size={30} color="var(--dark)" />
+        ) : (
+          <BiSolidComment size={20} color="var(--dark)" />
+        )}
+      </button>
+      {sortedComments.length === 0
+        ? null
+        : sortedComments.map(
+            ({
+              id,
+              bookUid,
+              content,
+              pageNumber,
+              likes,
+              userUid,
+              postedOn,
+            }) => (
+              <CommentItem
+                key={id}
+                id={id}
+                bookUid={bookUid}
+                content={content}
+                pageNumber={pageNumber}
+                likes={likes}
+                userUid={userUid}
+                postedOn={postedOn}
+              />
+            )
+          )}
+    </motion.aside>
+  );
+};
 
 export default function Editor({ params: { id } }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [meta, setMeta] = useState<Book>();
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfBuffer, setPdfBuffer] = useState<ArrayBuffer | null>(null);
+  const [[width, height], setDimensions] = useState<[number, number]>([0, 0]);
+
+  useEffect(() => {
+    if (width || height) return;
+
+    setDimensions([600, window.innerHeight - 120]);
+  }, []);
+
+  useEffect(() => console.log([width, height]), [width, height]);
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -25,22 +127,24 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
 
         const meta = metaSnap.docs[0].data() as Book;
 
-        const fileRef = ref(storage, `books/${id}`);
-        const blob = await getBlob(fileRef);
+        // const fileRef = ref(storage, `books/${id}`);
+        // const blob = await getBlob(fileRef);
 
-        setPdfFile(new File([blob], meta.title, { type: "application/pdf" }));
+        setPdfBuffer(new ArrayBuffer(0));
         setMeta(meta);
       } catch (err) {
         console.error(err);
       } finally {
-        setLoading(false);
+        setTimeout(() => {
+          setLoading(false);
+        }, 1000);
       }
     };
 
     fetchInfo();
   }, [id]);
 
-  if (!loading && (!meta || !pdfFile)) {
+  if (!loading && (!meta || !pdfBuffer)) {
     redirect("/dashboard");
   }
 
@@ -60,8 +164,21 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
         <>
           <div className={styles.header}>{meta!.title}</div>
           <div className={styles.contentLayout}>
-            <div></div>
-            <aside className={styles.sidebar}></aside>
+            <div className={styles.pdf}>
+              <PDFViewer
+                width={width || 200}
+                height={height || 200}
+                pdfBuffer={pdfBuffer!}
+                openCommentary={() => {}}
+                closeCommentary={() => {}}
+              />
+            </div>
+            <Sidebar
+              id={id}
+              isCommenting={false}
+              setIsCommenting={() => {}}
+              pageNumber={0}
+            />
           </div>
         </>
       )}
