@@ -1,6 +1,7 @@
 :root {
   --slot-bg: rgba(0, 0, 0, 0.035);
-  color: rgba(0, 0, 0, 0.85);
+  --dark: rgba(0, 0, 0, 0.85);
+  color: var(--dark);
   font-size: 62.5%;
 }
 

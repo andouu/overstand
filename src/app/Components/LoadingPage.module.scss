@@ -1,0 +1,23 @@
+.wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  .logo {
+    height: 4rem;
+    margin-bottom: 1rem;
+    object-fit: contain;
+  }
+
+  .tag {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: gray;
+    font-size: 1.6rem;
+    font-weight: 500;
+  }
+}
