@@ -3,8 +3,12 @@ import { ReactNode } from "react";
 import styles from "./layout.module.scss";
 import { UnstyledLink } from "@/app/Components/UnstyledLink";
 import { useSelectedLayoutSegment } from "next/navigation";
+import { useAuth } from "@/app/context/Auth";
+import { userTwoChars } from "@/app/util/format";
+import { BiUser } from "react-icons/bi";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const segment = useSelectedLayoutSegment();
 
   return (
@@ -31,7 +35,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             Global Library
           </UnstyledLink>
           <UnstyledLink href="/dashboard/settings">
-            <div className={styles.pfp}>AZ</div>
+            <div className={styles.pfp}>
+              {user!.displayName ? userTwoChars(user!.displayName) : <BiUser />}
+            </div>
           </UnstyledLink>
         </div>
       </div>

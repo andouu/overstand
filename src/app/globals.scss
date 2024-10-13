@@ -37,11 +37,13 @@ a {
 }
 
 button {
+  transition: opacity 0.15s;
   &:disabled {
     opacity: 0.65;
     pointer-events: none;
   }
   &:hover {
     cursor: pointer;
+    opacity: 0.85;
   }
 }

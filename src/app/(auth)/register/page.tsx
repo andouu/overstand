@@ -6,6 +6,7 @@ import { Loader } from "@/app/Components/Loader";
 import { REGEX_EMAIL } from "@/app/util/Regex";
 import Link from "next/link";
 import { useAuth } from "@/app/context/Auth";
+import { UnstyledLink } from "@/app/Components/UnstyledLink";
 
 export default function Register() {
   const [email, setEmail] = useState<string>("");
@@ -28,6 +29,9 @@ export default function Register() {
   return (
     <div className={styles.layout}>
       <div className={styles.left}>
+        <UnstyledLink className={styles.logo} href="/">
+          <img src="/logo.svg" />
+        </UnstyledLink>
         <div className={styles.form}>
           <span className={styles.heading}>Sign Up</span>
           <span className={styles.subheading}>
