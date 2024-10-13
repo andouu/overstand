@@ -187,7 +187,7 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
         if (metaSnap.empty) return;
 
         const meta = metaSnap.docs[0].data() as Book;
-        
+
         setMeta(meta);
       } catch (err) {
         console.error(err);
@@ -211,10 +211,68 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
   }>({ preamble: "", content: "" });
   const [highlightBlob, setHighlightBlob] = useState<Blob | null>(null);
   const [locked, setLocked] = useState<boolean>(false);
+  useEffect(() => {
+    if (!menuOpen) {
+      setPromptText("");
+    }
+  }, [menuOpen]);
 
-  if (!loading && !meta) {
-    redirect("/dashboard");
-  }
+  const handleSubmitPrompt = async () => {
+    if (!promptText || !meta) return;
+
+    if (!prompting) {
+      try {
+        setLocked(true);
+        const commentCol = collection(db, "comments").withConverter(
+          CommentConverter
+        );
+        const newComment: Comment = {
+          id: window.crypto.randomUUID(),
+          content: promptText,
+          bookUid: id,
+          pageNumber: focusedPageNumber || 1,
+          likes: 0,
+          postedOn: new Date(),
+          userUid: user!.uid,
+        };
+        await addDoc(commentCol, newComment);
+      } catch (e) {
+        console.error("Error adding document: ", e);
+        throw e;
+      } finally {
+        setLocked(false);
+      }
+      setPromptText("");
+    } else {
+      if (!highlightBlob) {
+        return;
+      }
+
+      setLocked(true);
+      setAiResponse({ preamble: "", content: "" });
+      setPromptText("");
+      const imgArray = new Uint8Array(await highlightBlob.arrayBuffer());
+      await textHandler(
+        promptText,
+        imgArray,
+        (
+          text: string | { preamble: string; content: string },
+          isFinal: boolean = false
+        ) => {
+          if (isFinal && typeof text === "string") {
+            const { preamble, content } = JSON.parse(text);
+            setAiResponse({ preamble, content });
+          } else {
+            setAiResponse((prev) => ({
+              ...prev,
+              content: prev.content + text,
+            }));
+          }
+        }
+      );
+      setLocked(false);
+    }
+  };
 
   const variant = menuOpen ? "open" : "closed";
 
@@ -239,7 +297,6 @@ export default function Editor({ params: { id } }: { params: { id: string } }) {
                 pdfId={id}
                 width={width || 200}
                 height={height || 200}
-                pdfBuffer={pdfBuffer!}
                 setPageNumber={setFocusedPageNumber}
                 setHighlightBlob={setHighlightBlob}
                 openCommentary={() => setMenuOpen(true)}
