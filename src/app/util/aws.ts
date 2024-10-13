@@ -46,7 +46,7 @@ async function processStream(
       }
     }
     const formattedContent = formatLatexContent(content);
-    onChunk(formattedContent, true); // true flag indicates this is the final chunk
+    onChunk(formattedContent.content, true); // true flag indicates this is the final chunk
   } catch (error) {
     console.error("Error processing stream:", error);
   }
@@ -56,7 +56,7 @@ export async function textHandler(
   textInput: string,
   imgArray: Uint8Array,
   onChunk: ChunkCallback
-) {
+): Promise<string> {
   const prompt =
     "You are a helpful LLM guiding a student learning from a textbook. Use the context of the image (a screenshot of a section of a textbook) to guide your response. For reasoning problems, think step by step. Write a response displayable using LaTeX. Here is the user's question: " +
     textInput;
@@ -99,9 +99,20 @@ export async function textHandler(
     const command = new ConverseStreamCommand(input);
     const response = await client.send(command);
 
-    await processStream(response, onChunk);
+    let fullContent = "";
+    await processStream(response, (chunk, isFinal) => {
+      if (typeof chunk === 'string') {
+        fullContent += chunk;
+      } else {
+        fullContent += chunk.content;
+      }
+      onChunk(chunk, isFinal);
+    });
+
+    return fullContent; // Return the full content as a string
   } catch (error) {
     console.error(error);
+    return "An error occurred while processing your request.";
   }
 }
 
