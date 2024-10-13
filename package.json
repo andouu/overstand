@@ -9,23 +9,32 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-dropdown-menu": "^2.1.2",
     "@tanstack/react-query": "^5.59.13",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
     "firebase": "^10.14.1",
     "framer-motion": "^11.11.8",
     "jotai": "^2.10.0",
+    "lucide-react": "^0.452.0",
     "next": "14.2.15",
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.3.0",
     "sass": "^1.79.5",
-    "scss": "^0.2.4"
+    "scss": "^0.2.4",
+    "tailwind-merge": "^2.5.3",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.20",
     "eslint": "^8",
-    "eslint-config-next": "14.2.15"
+    "eslint-config-next": "14.2.15",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5"
   }
 }

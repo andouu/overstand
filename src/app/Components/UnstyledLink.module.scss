@@ -1,0 +1,8 @@
+.wrapper {
+  all: unset;
+
+  &:hover {
+    cursor: pointer;
+    text-decoration: none;
+  }
+}
