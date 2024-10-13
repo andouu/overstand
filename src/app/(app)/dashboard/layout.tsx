@@ -6,7 +6,6 @@ import { useSelectedLayoutSegment } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const segment = useSelectedLayoutSegment();
-  console.log(segment);
 
   return (
     <div className={styles.layout}>
